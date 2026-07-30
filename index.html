@@ -62,10 +62,9 @@ table tr:hover td{background:#f9fafb}
 .empty-state p{font-size:14px}
 .pin-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;padding:20px}
 .pin-overlay h2{font-size:18px;margin-bottom:20px;color:#111827}
-.pin-dots{display:flex;gap:12px;margin-bottom:20px}
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #d1d5db;transition:all .2s}
-.pin-dot.filled{background:#2563eb;border-color:#2563eb}
-..pin-input{position:fixed;top:0;left:0;width:100%;height:100%;opacity:0;z-index:101}
+.pin-inputs{display:flex;gap:12px;justify-content:center;margin-bottom:20px}
+.pin-box{width:48px;height:52px;text-align:center;font-size:22px;font-weight:700;color:#111827;border:2px solid #d1d5db;border-radius:10px;outline:none;background:#f9fafb;-webkit-appearance:none}
+.pin-box:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
 .file-upload{border:2px dashed #d1d5db;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px}
 .file-upload:hover,.file-upload.dragover{border-color:#2563eb;background:#f0f7ff}
 .file-upload p{color:#9ca3af;font-size:13px}
@@ -179,24 +178,38 @@ function showPIN(onSuccess){
   overlay.id='pin-overlay';
   overlay.innerHTML=`
     <h2>请输入管理密码</h2>
-    <div class="pin-dots" id="pin-dots">${[0,1,2,3].map(()=>'<div class="pin-dot"></div>').join('')}</div>
+    <div class="pin-inputs" id="pin-inputs">
+      <input type="tel" maxlength="1" class="pin-box" inputmode="numeric" pattern="[0-9]">
+      <input type="tel" maxlength="1" class="pin-box" inputmode="numeric" pattern="[0-9]">
+      <input type="tel" maxlength="1" class="pin-box" inputmode="numeric" pattern="[0-9]">
+      <input type="tel" maxlength="1" class="pin-box" inputmode="numeric" pattern="[0-9]">
+    </div>
     <p class="text-muted" id="pin-error" style="min-height:20px"></p>
   `;
   document.body.appendChild(overlay);
-  const input=document.createElement('input');
-  input.type='number';input.className='pin-input';input.maxLength=4;
-  input.addEventListener('input',()=>{
-    currentPin=input.value.slice(0,4);
-    const dots=document.querySelectorAll('.pin-dot');
-    dots.forEach((d,i)=>{d.classList.toggle('filled',i<currentPin.length)});
-    document.getElementById('pin-error').textContent='';
-    if(currentPin.length===4){
-      if(currentPin===settings.pin){overlay.remove();input.remove();onSuccess()}
-      else{currentPin='';input.value='';document.getElementById('pin-error').textContent='密码错误';setTimeout(()=>{document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('filled'))},500)}
-    }
+  const boxes=overlay.querySelectorAll('.pin-box');
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input',()=>{
+      const val=box.value.replace(/\D/g,'');
+      box.value=val.slice(0,1);
+      if(val&&i<3)boxes[i+1].focus();
+      currentPin=Array.from(boxes).map(b=>b.value).join('');
+      document.getElementById('pin-error').textContent='';
+      if(currentPin.length===4){
+        if(currentPin===settings.pin){overlay.remove();onSuccess()}
+        else{
+          boxes.forEach(b=>b.value='');currentPin='';
+          document.getElementById('pin-error').textContent='密码错误';
+          setTimeout(()=>boxes[0].focus(),500);
+        }
+      }
+    });
+    box.addEventListener('keydown',(e)=>{
+      if(e.key==='Backspace'&&!box.value&&i>0)boxes[i-1].focus();
+    });
+    box.addEventListener('click',()=>box.focus());
   });
-  document.body.appendChild(input);
-  setTimeout(()=>input.focus(),100);
+  setTimeout(()=>boxes[0].focus(),200);
 }
 
 function getAppUrl(channelCode){
