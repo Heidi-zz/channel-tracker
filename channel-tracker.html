@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>渠道追踪工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f0f2f5;color:#1f2937;line-height:1.6;min-height:100vh}
+.container{max-width:480px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.card-title{font-size:16px;font-weight:600;color:#111827;margin-bottom:16px}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:13px;color:#6b7280;margin-bottom:6px;font-weight:500}
+.input-group input,.input-group select{width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;color:#1f2937;background:#f9fafb;transition:border-color .2s;outline:none}
+.input-group input:focus,.input-group select:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
+.input-group input::placeholder{color:#d1d5db}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all .2s;width:100%;gap:6px}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:active{background:#1d4ed8;transform:scale(0.98)}
+.btn-success{background:#10b981;color:#fff}
+.btn-success:active{background:#059669;transform:scale(0.98)}
+.btn-outline{background:#fff;color:#2563eb;border:1.5px solid #2563eb}
+.btn-outline:active{background:#eff6ff}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-sm{padding:8px 16px;font-size:13px;width:auto}
+.btn-xs{padding:4px 10px;font-size:12px;width:auto}
+.btn:disabled{opacity:0.5;pointer-events:none}
+.tabs{display:flex;gap:4px;background:#e5e7eb;border-radius:10px;padding:4px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#6b7280;white-space:nowrap;cursor:pointer;border:none;background:transparent;transition:all .2s}
+.tab.active{background:#fff;color:#111827;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-gray{background:#f3f4f6;color:#6b7280}
+.badge-amber{background:#fef3c7;color:#92400e}
+.header{text-align:center;padding:32px 16px 20px}
+.header h1{font-size:20px;font-weight:700;color:#111827;margin-bottom:6px}
+.header p{font-size:14px;color:#9ca3af}
+.channel-info{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border-radius:12px;padding:20px;margin-bottom:12px;text-align:center}
+.channel-info .code{font-size:28px;font-weight:800;letter-spacing:2px;margin-bottom:4px}
+.channel-info .name{font-size:14px;opacity:0.9}
+.copy-box{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:12px;word-break:break-all;gap:8px}
+.copy-box .link-text{font-size:13px;color:#166534;flex:1;min-width:0}
+.copy-box .copy-btn{flex-shrink:0;padding:6px 14px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.copy-box .copy-btn:active{background:#059669}
+.copy-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s}
+.copy-toast.show{opacity:1}
+table{width:100%;border-collapse:collapse;font-size:13px}
+table th{text-align:left;padding:10px 8px;color:#6b7280;font-weight:500;border-bottom:1.5px solid #f3f4f6;font-size:12px;white-space:nowrap}
+table td{padding:10px 8px;border-bottom:1px solid #f9fafb;color:#374151}
+table tr:hover td{background:#f9fafb}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.stat-card .value{font-size:24px;font-weight:700;color:#111827}
+.stat-card .label{font-size:12px;color:#9ca3af;margin-top:4px}
+.match-status{margin-top:12px;padding:12px;border-radius:8px;font-size:13px}
+.match-status.success{background:#f0fdf4;color:#065f46;border:1px solid #86efac}
+.match-status.partial{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.empty-state{text-align:center;padding:40px 20px;color:#9ca3af}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+.pin-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;padding:20px}
+.pin-overlay h2{font-size:18px;margin-bottom:20px;color:#111827}
+.pin-dots{display:flex;gap:12px;margin-bottom:20px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #d1d5db;transition:all .2s}
+.pin-dot.filled{background:#2563eb;border-color:#2563eb}
+.pin-input{position:absolute;opacity:0;pointer-events:none}
+.file-upload{border:2px dashed #d1d5db;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px}
+.file-upload:hover,.file-upload.dragover{border-color:#2563eb;background:#f0f7ff}
+.file-upload p{color:#9ca3af;font-size:13px}
+.search-bar{margin-bottom:12px}
+.search-bar input{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#f9fafb}
+.search-bar input:focus{border-color:#2563eb;background:#fff}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:14px;padding:24px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal .btn-row{display:flex;gap:8px;margin-top:16px}
+.success-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:60;padding:20px;text-align:center}
+.success-overlay .check{width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:32px}
+.success-overlay h2{font-size:20px;color:#065f46;margin-bottom:8px}
+.success-overlay p{color:#6b7280;font-size:14px}
+.gateway-buttons{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.gateway-btn{padding:18px 24px;border-radius:12px;font-size:15px;font-weight:600;text-align:center;cursor:pointer;border:none;transition:all .2s}
+.gateway-btn.agent{background:#2563eb;color:#fff}
+.gateway-btn.agent:active{background:#1d4ed8}
+.gateway-btn.admin{background:#fff;color:#374151;border:1.5px solid #d1d5db}
+.gateway-btn.admin:active{background:#f9fafb}
+.export-btn{display:flex;gap:8px;flex-wrap:wrap}
+.export-btn .btn{flex:1;min-width:120px}
+.section-divider{border:none;border-top:1px solid #e5e7eb;margin:16px 0}
+.filter-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.filter-row select{flex:1;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;background:#f9fafb;outline:none}
+.text-muted{color:#9ca3af;font-size:12px}
+.text-sm{font-size:13px}
+.mt-2{margin-top:8px}
+.mt-4{margin-top:16px}
+.mb-2{margin-bottom:8px}
+.mb-4{margin-bottom:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.gap-2{display:flex;gap:8px}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+canvas{width:100%;max-width:100%}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="toast" class="copy-toast"></div>
+<div id="modal-root"></div>
+
+<script>
+(function(){
+const STORAGE_KEY = 'channel_tracker_data';
+const PIN_KEY = 'channel_tracker_pin';
+const SETTINGS_KEY = 'channel_tracker_settings';
+const DEFAULT_PIN = '0000';
+
+function getData(){try{const d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):{channels:{},leads:[],registrations:[]}}catch(e){return{channels:{},leads:[],registrations:[]}}}
+function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
+function getSettings(){try{const s=localStorage.getItem(SETTINGS_KEY);return s?JSON.parse(s):{pin:DEFAULT_PIN,registerUrl:''}}catch(e){return{pin:DEFAULT_PIN,registerUrl:''}}}
+function saveSettings(s){localStorage.setItem(SETTINGS_KEY,JSON.stringify(s))}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2)}
+
+function formatTime(ts){if(!ts)return'-';const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0')+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
+function formatDate(ts){if(!ts)return'-';const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0')}
+
+function validatePhone(phone){return /^1[3-9]\d{9}$/.test(phone)}
+
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  if(lines.length<2)return{headers:[],rows:[]};
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+    if(vals.length===headers.length)rows.push(vals);
+  }
+  return{headers,rows};
+}
+
+function downloadCSV(filename,headers,rows){
+  let csv='\uFEFF'+headers.join(',')+'\n';
+  rows.forEach(r=>{csv+=r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')+'\n'});
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function copyText(text){
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('已复制到剪贴板'))}
+  else{
+    const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast('已复制到剪贴板');
+  }
+}
+
+function getParam(name){
+  const url=new URL(window.location.href);
+  return url.searchParams.get(name)||'';
+}
+
+let currentPin='';
+function showPIN(onSuccess){
+  currentPin='';
+  const settings=getSettings();
+  const overlay=document.createElement('div');
+  overlay.className='pin-overlay';
+  overlay.id='pin-overlay';
+  overlay.innerHTML=`
+    <h2>请输入管理密码</h2>
+    <div class="pin-dots" id="pin-dots">${[0,1,2,3].map(()=>'<div class="pin-dot"></div>').join('')}</div>
+    <p class="text-muted" id="pin-error" style="min-height:20px"></p>
+  `;
+  document.body.appendChild(overlay);
+  const input=document.createElement('input');
+  input.type='number';input.className='pin-input';input.maxLength=4;
+  input.addEventListener('input',()=>{
+    currentPin=input.value.slice(0,4);
+    const dots=document.querySelectorAll('.pin-dot');
+    dots.forEach((d,i)=>{d.classList.toggle('filled',i<currentPin.length)});
+    document.getElementById('pin-error').textContent='';
+    if(currentPin.length===4){
+      if(currentPin===settings.pin){overlay.remove();input.remove();onSuccess()}
+      else{currentPin='';input.value='';document.getElementById('pin-error').textContent='密码错误';setTimeout(()=>{document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('filled'))},500)}
+    }
+  });
+  document.body.appendChild(input);
+  setTimeout(()=>input.focus(),100);
+}
+
+function getAppUrl(channelCode){
+  const url=new URL(window.location.href);
+  url.search='';url.searchParams.set('ch',channelCode);
+  return url.toString();
+}
+
+function render(page){
+  document.getElementById('app').innerHTML='';
+  document.getElementById('modal-root').innerHTML='';
+  switch(page){
+    case'gateway':renderGateway();break;
+    case'landing':renderLanding();break;
+    case'admin-channels':renderAdmin('channels');break;
+    case'admin-leads':renderAdmin('leads');break;
+    case'admin-match':renderAdmin('match');break;
+    case'admin-dashboard':renderAdmin('dashboard');break;
+    case'admin-settings':renderAdmin('settings');break;
+    case'admin-export':renderAdmin('export');break;
+    default:renderGateway();
+  }
+}
+
+function renderGateway(){
+  const ch=getParam('ch');
+  if(ch){renderLanding();return}
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="container">
+      <div class="header">
+        <h1>渠道追踪工具</h1>
+        <p>渠道邀请 · 客户注册 · 数据统计</p>
+      </div>
+      <div class="card">
+        <div class="card-title">渠道商入口</div>
+        <p style="font-size:14px;color:#6b7280;margin-bottom:12px">输入您的邀请码，生成专属渠道链接</p>
+        <div class="input-group">
+          <input type="text" id="agent-code-input" placeholder="请输入邀请码" style="text-transform:uppercase">
+        </div>
+        <button class="btn btn-primary" id="agent-generate-btn">生成我的专属链接</button>
+        <div id="agent-result" style="margin-top:8px"></div>
+      </div>
+      <button class="gateway-btn admin" onclick="render('admin-channels');showPIN(()=>render('admin-channels'))">管理后台入口</button>
+      <p class="text-muted" style="text-align:center;margin-top:16px">内部人员使用</p>
+    </div>
+  `;
+  bindGatewayEvents();
+}
+
+function bindGatewayEvents(){
+  const input=document.getElementById('agent-code-input');
+  const btn=document.getElementById('agent-generate-btn');
+  const result=document.getElementById('agent-result');
+  const data=getData();
+  btn.onclick=()=>{
+    const code=input.value.trim().toUpperCase();
+    if(!code){showToast('请输入邀请码');return}
+    if(!data.channels[code]){data.channels[code]={name:code,agentName:'',agentPhone:'',createdAt:Date.now()};saveData(data)}
+    const link=getAppUrl(code);
+    result.innerHTML=`
+      <div class="copy-box">
+        <span class="link-text">${link}</span>
+        <button class="copy-btn" onclick="copyText('${link.replace(/'/g,"\\'")}')">复制</button>
+      </div>
+      <p class="text-muted mt-2">将链接发送给客户，客户填写信息后将自动跳转注册</p>
+    `;
+  };
+}
+
+function renderLanding(){
+  const ch=getParam('ch').trim().toUpperCase();
+  const data=getData();
+  const channel=data.channels[ch];
+  if(!channel){renderNotFound(ch);return}
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="container">
+      <div class="channel-info">
+        <div class="name" style="font-size:13px">来自渠道推荐</div>
+        <div class="code">${ch}</div>
+        <div style="font-size:18px;font-weight:700;margin-top:4px">${channel.name||ch}</div>
+      </div>
+      <div class="card">
+        <div class="card-title">确认信息，前往注册</div>
+        <div class="input-group">
+          <label>姓名</label>
+          <input type="text" id="cust-name" placeholder="请输入您的姓名">
+        </div>
+        <div class="input-group">
+          <label>手机号</label>
+          <input type="tel" id="cust-phone" placeholder="请输入您的手机号" maxlength="11">
+        </div>
+        <button class="btn btn-success" id="go-register-btn">确认去注册</button>
+        <p class="text-muted mt-2" style="text-align:center">信息仅供渠道归属确认，点击即跳转官方注册页</p>
+      </div>
+    </div>
+  `;
+  bindLandingEvents(ch);
+}
+
+function renderNotFound(code){
+  document.getElementById('app').innerHTML=`
+    <div class="container">
+      <div class="empty-state">
+        <div class="icon">&#x1F50D;</div>
+        <p>未找到渠道 "${code}"</p>
+        <p class="text-muted mt-2">请确认链接是否正确</p>
+      </div>
+    </div>
+  `;
+}
+
+function bindLandingEvents(ch){
+  const btn=document.getElementById('go-register-btn');
+  const nameEl=document.getElementById('cust-name');
+  const phoneEl=document.getElementById('cust-phone');
+  btn.onclick=()=>{
+    const name=nameEl.value.trim();
+    const phone=phoneEl.value.trim();
+    if(!name){showToast('请输入姓名');nameEl.focus();return}
+    if(!validatePhone(phone)){showToast('请输入正确的手机号');phoneEl.focus();return}
+    const data=getData();
+    data.leads.push({id:uid(),channelCode:ch,customerName:name,customerPhone:phone,createdAt:Date.now()});
+    saveData(data);
+    const settings=getSettings();
+    const registerUrl=settings.registerUrl||'#'
+    document.getElementById('app').innerHTML=`
+      <div class="success-overlay">
+        <div class="check">&#x2714;</div>
+        <h2>信息已确认</h2>
+        <p>正在为您跳转官方注册页面...</p>
+      </div>
+    `;
+    setTimeout(()=>{if(registerUrl!=='#')window.location.href=registerUrl},1500);
+  };
+}
+
+function renderAdmin(tab){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="container">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0 8px">
+        <h1 style="font-size:18px">管理后台</h1>
+        <button class="btn btn-outline btn-xs" onclick="location.reload()">退出</button>
+      </div>
+      <div class="tabs" id="admin-tabs">
+        <button class="tab${tab==='channels'?' active':''}" data-tab="channels">渠道管理</button>
+        <button class="tab${tab==='leads'?' active':''}" data-tab="leads">客户线索</button>
+        <button class="tab${tab==='match'?' active':''}" data-tab="match">数据匹配</button>
+        <button class="tab${tab==='dashboard'?' active':''}" data-tab="dashboard">统计看板</button>
+        <button class="tab${tab==='export'?' active':''}" data-tab="export">导出</button>
+        <button class="tab${tab==='settings'?' active':''}" data-tab="settings">设置</button>
+      </div>
+      <div id="admin-content"></div>
+    </div>
+  `;
+  document.querySelectorAll('#admin-tabs .tab').forEach(t=>{
+    t.onclick=()=>render('admin-'+t.dataset.tab)
+  });
+  renderAdminContent(tab);
+}
+
+function renderAdminContent(tab){
+  const content=document.getElementById('admin-content');
+  switch(tab){
+    case'channels':renderAdminChannels(content);break;
+    case'leads':renderAdminLeads(content);break;
+    case'match':renderAdminMatch(content);break;
+    case'dashboard':renderAdminDashboard(content);break;
+    case'export':renderAdminExport(content);break;
+    case'settings':renderAdminSettings(content);break;
+  }
+}
+
+function renderAdminChannels(content){
+  const data=getData();
+  const channels=Object.entries(data.channels).sort((a,b)=>b[1].createdAt-a[1].createdAt);
+  let html='<div class="flex-between mb-4"><div class="card-title" style="margin-bottom:0">渠道列表 ('+channels.length+')</div><button class="btn btn-primary btn-sm" id="add-channel-btn">+ 添加渠道</button></div>';
+  html+='<div class="search-bar"><input type="text" placeholder="搜索渠道邀请码或名称..." id="channel-search"></div>';
+  if(channels.length===0){
+    html+='<div class="empty-state"><div class="icon">&#x1F4CB;</div><p>暂无渠道</p><p class="text-muted">点击"+ 添加渠道"或让渠道商在首页输入邀请码自动创建</p></div>';
+  }else{
+    html+='<table><thead><tr><th>邀请码</th><th>渠道名称</th><th>渠道联系人</th><th>创建时间</th><th>专属链接</th><th>操作</th></tr></thead><tbody>';
+    channels.forEach(([code,c])=>{
+      const link=getAppUrl(code);
+      html+=`<tr>
+        <td><span class="badge badge-blue">${code}</span></td>
+        <td>${c.name||'-'}</td>
+        <td>${c.agentName||'-'}<br><span class="text-muted">${c.agentPhone||''}</span></td>
+        <td><span class="text-muted">${formatDate(c.createdAt)}</span></td>
+        <td><button class="btn btn-outline btn-xs" onclick="copyText('${link.replace(/'/g,"\\'")}')">复制链接</button></td>
+        <td><button class="btn btn-danger btn-xs" onclick="deleteChannel('${code}')">删除</button></td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+  }
+  content.innerHTML=html;
+
+  document.getElementById('add-channel-btn').onclick=()=>showChannelModal();
+  const search=document.getElementById('channel-search');
+  if(search)search.oninput=(e)=>{
+    const q=e.target.value.toLowerCase();
+    document.querySelectorAll('tbody tr').forEach(tr=>{
+      tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none'
+    });
+  };
+}
+
+window.deleteChannel=function(code){
+  if(!confirm('确定删除渠道 "'+code+'" 吗？相关客户线索将保留但无法关联渠道名称。'))return;
+  const data=getData();
+  delete data.channels[code];
+  saveData(data);
+  render('admin-channels');
+};
+
+function showChannelModal(editCode){
+  const data=getData();
+  const existing=editCode?data.channels[editCode]:null;
+  const modal=document.getElementById('modal-root');
+  modal.innerHTML=`
+    <div class="modal-overlay" id="channel-modal-overlay">
+      <div class="modal">
+        <h3>${editCode?'编辑渠道':'添加渠道'}</h3>
+        <div class="input-group">
+          <label>邀请码 *</label>
+          <input type="text" id="modal-code" placeholder="如 BJ001" value="${editCode||''}" ${editCode?'readonly':''} style="text-transform:uppercase">
+        </div>
+        <div class="input-group">
+          <label>渠道名称</label>
+          <input type="text" id="modal-name" placeholder="如 北京渠道商" value="${existing?existing.name:''}">
+        </div>
+        <div class="input-group">
+          <label>渠道联系人</label>
+          <input type="text" id="modal-agent-name" placeholder="联系人姓名" value="${existing&&existing.agentName?existing.agentName:''}">
+        </div>
+        <div class="input-group">
+          <label>联系人手机</label>
+          <input type="tel" id="modal-agent-phone" placeholder="联系人手机号" value="${existing&&existing.agentPhone?existing.agentPhone:''}">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" id="modal-save">保存</button>
+          <button class="btn btn-outline btn-sm" id="modal-cancel">取消</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-cancel').onclick=()=>modal.innerHTML='';
+  document.getElementById('channel-modal-overlay').onclick=(e)=>{if(e.target===e.currentTarget)modal.innerHTML=''};
+  document.getElementById('modal-save').onclick=()=>{
+    const code=document.getElementById('modal-code').value.trim().toUpperCase();
+    const name=document.getElementById('modal-name').value.trim();
+    const agentName=document.getElementById('modal-agent-name').value.trim();
+    const agentPhone=document.getElementById('modal-agent-phone').value.trim();
+    if(!code){showToast('请输入邀请码');return}
+    const data=getData();
+    if(!editCode&&data.channels[code]){showToast('该邀请码已存在');return}
+    data.channels[code]={name:name||code,agentName,agentPhone,createdAt:existing?existing.createdAt:Date.now()};
+    saveData(data);
+    modal.innerHTML='';
+    render('admin-channels');
+  };
+}
+
+function renderAdminLeads(content){
+  const data=getData();
+  let leads=[...data.leads].sort((a,b)=>b.createdAt-a.createdAt);
+  const channels=data.channels;
+  const total=leads.length;
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayCount=leads.filter(l=>l.createdAt>=today.getTime()).length;
+
+  let html=`<div class="stat-grid">
+    <div class="stat-card"><div class="value">${total}</div><div class="label">总线索数</div></div>
+    <div class="stat-card"><div class="value">${todayCount}</div><div class="label">今日线索</div></div>
+  </div>`;
+  html+='<div class="search-bar"><input type="text" placeholder="搜索姓名或手机号..." id="lead-search"></div>';
+  html+='<div class="filter-row"><select id="lead-channel-filter"><option value="">全部渠道</option>';
+  Object.entries(channels).sort((a,b)=>b[1].createdAt-a[1].createdAt).forEach(([code,c])=>{
+    html+=`<option value="${code}">${code} - ${c.name||code}</option>`;
+  });
+  html+='</select></div>';
+
+  if(leads.length===0){
+    html+='<div class="empty-state"><div class="icon">&#x1F4ED;</div><p>暂无客户线索</p><p class="text-muted">渠道分享链接后，客户填写信息将出现在这里</p></div>';
+  }else{
+    html+='<table id="leads-table"><thead><tr><th>渠道</th><th>客户姓名</th><th>手机号</th><th>提交时间</th></tr></thead><tbody>';
+    leads.forEach(l=>{
+      const c=channels[l.channelCode];
+      html+=`<tr data-channel="${l.channelCode}" data-phone="${l.customerPhone}" data-name="${l.customerName}">
+        <td><span class="badge badge-blue">${l.channelCode}</span>${c?'<br><span class="text-muted text-sm">'+c.name+'</span>':''}</td>
+        <td>${l.customerName}</td>
+        <td>${l.customerPhone}</td>
+        <td><span class="text-muted">${formatTime(l.createdAt)}</span></td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+  }
+  content.innerHTML=html;
+
+  const search=document.getElementById('lead-search');
+  const filter=document.getElementById('lead-channel-filter');
+  const filterFn=()=>{
+    const q=search?search.value.toLowerCase():'';
+    const ch=filter?filter.value:'';
+    document.querySelectorAll('#leads-table tbody tr').forEach(tr=>{
+      const matchQ=!q||tr.dataset.name.includes(q)||tr.dataset.phone.includes(q);
+      const matchCh=!ch||tr.dataset.channel===ch;
+      tr.style.display=(matchQ&&matchCh)?'':'none';
+    });
+  };
+  if(search)search.oninput=filterFn;
+  if(filter)filter.onchange=filterFn;
+}
+
+function renderAdminMatch(content){
+  const data=getData();
+  const leads=data.leads;
+  const registrations=data.registrations;
+  let html='<div class="card-title">注册数据匹配</div>';
+  html+='<p class="text-muted mb-4">上传官方后台导出的注册CSV文件（需包含手机号列），系统自动匹配渠道归属</p>';
+
+  html+=`<div class="stat-grid">
+    <div class="stat-card"><div class="value">${leads.length}</div><div class="label">待匹配线索</div></div>
+    <div class="stat-card"><div class="value">${registrations.length}</div><div class="label">已导入注册记录</div></div>
+  </div>`;
+
+  html+=`<div class="file-upload" id="csv-upload">
+    <p style="font-size:24px;margin-bottom:8px">&#x1F4C1;</p>
+    <p>点击或拖拽上传 CSV 文件</p>
+    <input type="file" accept=".csv" style="display:none" id="csv-file-input">
+  </div>`;
+
+  html+='<div class="section-divider"></div>';
+  html+='<div id="csv-preview" style="margin-bottom:16px"></div>';
+
+  if(registrations.length>0){
+    html+='<button class="btn btn-danger btn-sm" id="clear-reg-btn">清空已导入数据</button>';
+  }
+
+  if(leads.length>0&&registrations.length>0){
+    const matched=leads.filter(l=>registrations.some(r=>r.phone===l.customerPhone));
+    const unmatched=leads.filter(l=>!registrations.some(r=>r.phone===l.customerPhone));
+    const rate=leads.length>0?Math.round(matched.length/leads.length*100):0;
+    html+=`<div class="section-divider"></div>
+    <div class="card" style="background:#f0fdf4;border:1px solid #86efac">
+      <div class="card-title" style="color:#065f46">匹配结果</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="value" style="color:#065f46">${matched.length}</div><div class="label">已匹配（已注册）</div></div>
+        <div class="stat-card"><div class="value" style="color:#92400e">${unmatched.length}</div><div class="label">未匹配（未注册）</div></div>
+      </div>
+      <p style="color:#065f46;font-size:14px;font-weight:600">转化率 ${rate}%</p>
+    </div>`;
+
+    html+='<div class="section-divider"></div><div class="card-title">匹配明细</div>';
+    html+='<table><thead><tr><th>渠道</th><th>客户</th><th>手机号</th><th>注册状态</th><th>线索时间</th></tr></thead><tbody>';
+    leads.sort((a,b)=>b.createdAt-a.createdAt).forEach(l=>{
+      const reg=registrations.find(r=>r.phone===l.customerPhone);
+      const c=data.channels[l.channelCode];
+      html+=`<tr>
+        <td><span class="badge badge-blue">${l.channelCode}</span></td>
+        <td>${l.customerName}</td>
+        <td>${l.customerPhone}</td>
+        <td>${reg?'<span class="badge badge-green">已注册</span>':'<span class="badge badge-gray">未注册</span>'}</td>
+        <td><span class="text-muted">${formatDate(l.createdAt)}</span></td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+  }
+
+  content.innerHTML=html;
+  bindMatchEvents();
+}
+
+function bindMatchEvents(){
+  const upload=document.getElementById('csv-upload');
+  const input=document.getElementById('csv-file-input');
+  if(!upload||!input)return;
+  upload.onclick=()=>input.click();
+  upload.ondragover=(e)=>{e.preventDefault();upload.classList.add('dragover')};
+  upload.ondragleave=()=>upload.classList.remove('dragover');
+  upload.ondrop=(e)=>{e.preventDefault();upload.classList.remove('dragover');handleCSVFile(e.dataTransfer.files[0])};
+  input.onchange=()=>{if(input.files[0])handleCSVFile(input.files[0])};
+
+  const clearBtn=document.getElementById('clear-reg-btn');
+  if(clearBtn)clearBtn.onclick=()=>{
+    if(!confirm('确定清空所有已导入的注册数据吗？'))return;
+    const data=getData();data.registrations=[];saveData(data);
+    render('admin-match');
+  };
+}
+
+function handleCSVFile(file){
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const csv=parseCSV(e.target.result);
+    showCSVPreview(csv);
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function showCSVPreview(csv){
+  if(csv.headers.length===0){
+    showToast('无法解析CSV文件');return;
+  }
+  const preview=document.getElementById('csv-preview');
+  let html='<div class="card"><div class="card-title">CSV预览（前5行）</div>';
+  html+='<div class="input-group"><label>选择手机号列</label><select id="col-phone">';
+  csv.headers.forEach((h,i)=>{html+=`<option value="${i}">${h}</option>`});
+  html+='</select></div>';
+  html+='<div class="input-group"><label>选择姓名列</label><select id="col-name">';
+  csv.headers.forEach((h,i)=>{html+=`<option value="${i}">${h}</option>`});
+  html+='</select></div>';
+  html+='<div style="overflow-x:auto"><table><thead><tr>';
+  csv.headers.forEach(h=>{html+=`<th>${h}</th>`});
+  html+='</tr></thead><tbody>';
+  csv.rows.slice(0,5).forEach(r=>{
+    html+='<tr>'+r.map(v=>`<td>${v}</td>`).join('')+'</tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<button class="btn btn-primary mt-4" id="import-csv-btn">确认导入 ('+csv.rows.length+' 条记录)</button></div>';
+
+  preview.innerHTML=html;
+
+  document.getElementById('import-csv-btn').onclick=()=>{
+    const phoneIdx=parseInt(document.getElementById('col-phone').value);
+    const nameIdx=parseInt(document.getElementById('col-name').value);
+    const data=getData();
+    let imported=0;
+    const existingPhones=new Set(data.registrations.map(r=>r.phone));
+    csv.rows.forEach(r=>{
+      const phone=r[phoneIdx]?r[phoneIdx].trim():'';
+      if(!phone||existingPhones.has(phone))return;
+      existingPhones.add(phone);
+      data.registrations.push({
+        phone:phone,
+        name:r[nameIdx]?r[nameIdx].trim():'',
+        registeredAt:Date.now(),
+        raw:csv.headers.reduce((o,h,i)=>{o[h]=r[i];return o},{})
+      });
+      imported++;
+    });
+    saveData(data);
+    showToast('成功导入 '+imported+' 条注册记录');
+    render('admin-match');
+  };
+}
+
+function renderAdminDashboard(content){
+  const data=getData();
+  const leads=data.leads;
+  const registrations=data.registrations;
+  const channels=data.channels;
+
+  const channelStats={};
+  leads.forEach(l=>{
+    if(!channelStats[l.channelCode])channelStats[l.channelCode]={leads:0,registered:0,name:channels[l.channelCode]?channels[l.channelCode].name:l.channelCode};
+    channelStats[l.channelCode].leads++;
+    if(registrations.some(r=>r.phone===l.customerPhone))channelStats[l.channelCode].registered++;
+  });
+
+  const sorted=Object.entries(channelStats).sort((a,b)=>b[1].leads-a[1].leads);
+  const totalLeads=leads.length;
+  const totalRegistered=leads.filter(l=>registrations.some(r=>r.phone===l.customerPhone)).length;
+  const rate=totalLeads>0?Math.round(totalRegistered/totalLeads*100):0;
+
+  let html=`<div class="stat-grid">
+    <div class="stat-card"><div class="value">${Object.keys(channels).length}</div><div class="label">渠道总数</div></div>
+    <div class="stat-card"><div class="value">${totalLeads}</div><div class="label">总线索数</div></div>
+    <div class="stat-card"><div class="value">${totalRegistered}</div><div class="label">已注册</div></div>
+    <div class="stat-card"><div class="value">${rate}%</div><div class="label">总转化率</div></div>
+  </div>`;
+
+  html+='<div class="card-title">各渠道排名</div>';
+  if(sorted.length===0){
+    html+='<div class="empty-state"><p>暂无数据</p></div>';
+  }else{
+    html+='<table><thead><tr><th>#</th><th>邀请码</th><th>渠道名称</th><th>线索</th><th>已注册</th><th>转化率</th></tr></thead><tbody>';
+    sorted.forEach(([code,s],i)=>{
+      const cr=s.leads>0?Math.round(s.registered/s.leads*100):0;
+      html+=`<tr>
+        <td>${i+1}</td>
+        <td><span class="badge badge-blue">${code}</span></td>
+        <td>${s.name}</td>
+        <td>${s.leads}</td>
+        <td><span class="badge badge-green">${s.registered}</span></td>
+        <td>${cr}%</td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+  }
+  content.innerHTML=html;
+}
+
+function renderAdminExport(content){
+  const data=getData();
+  const leads=data.leads;
+  const registrations=data.registrations;
+  const channels=data.channels;
+
+  let html='<div class="card-title">数据导出</div>';
+  html+='<p class="text-muted mb-4">导出数据为 CSV 文件，可离线查看</p>';
+
+  html+='<div class="card mb-4"><div class="card-title">渠道数据导出</div>';
+  html+='<p class="text-muted mb-2">包含所有渠道基本信息</p>';
+  html+='<button class="btn btn-primary btn-sm" id="export-channels-btn">导出渠道列表</button></div>';
+
+  html+='<div class="card mb-4"><div class="card-title">客户线索导出</div>';
+  html+='<p class="text-muted mb-2">包含所有客户提交的线索记录</p>';
+  html+='<button class="btn btn-primary btn-sm" id="export-leads-btn">导出客户线索 ('+leads.length+'条)</button></div>';
+
+  html+='<div class="card mb-4"><div class="card-title">匹配结果导出</div>';
+  html+='<p class="text-muted mb-2">包含渠道归属 + 注册状态匹配结果</p>';
+  html+='<button class="btn btn-primary btn-sm" id="export-match-btn">导出匹配结果</button></div>';
+
+  html+='<div class="card"><div class="card-title">渠道汇总统表</div>';
+  html+='<p class="text-muted mb-2">各渠道线索数、注册数、转化率汇总</p>';
+  html+='<button class="btn btn-primary btn-sm" id="export-summary-btn">导出汇总统表</button></div>';
+
+  content.innerHTML=html;
+
+  document.getElementById('export-channels-btn').onclick=()=>{
+    const rows=Object.entries(channels).map(([code,c])=>[code,c.name||code,c.agentName||'',c.agentPhone||'',formatDate(c.createdAt)]);
+    downloadCSV('渠道列表.csv',['邀请码','渠道名称','联系人','联系电话','创建时间'],rows);
+    showToast('导出成功');
+  };
+
+  document.getElementById('export-leads-btn').onclick=()=>{
+    const rows=leads.sort((a,b)=>b.createdAt-a.createdAt).map(l=>{
+      const c=channels[l.channelCode];
+      return [l.channelCode,c?c.name:'-',l.customerName,l.customerPhone,formatTime(l.createdAt)];
+    });
+    downloadCSV('客户线索.csv',['渠道邀请码','渠道名称','客户姓名','手机号','提交时间'],rows);
+    showToast('导出成功');
+  };
+
+  document.getElementById('export-match-btn').onclick=()=>{
+    const rows=leads.sort((a,b)=>b.createdAt-a.createdAt).map(l=>{
+      const c=channels[l.channelCode];
+      const reg=registrations.find(r=>r.phone===l.customerPhone);
+      return [l.channelCode,c?c.name:'-',l.customerName,l.customerPhone,reg?'已注册':'未注册',formatTime(l.createdAt)];
+    });
+    downloadCSV('匹配结果.csv',['渠道邀请码','渠道名称','客户姓名','手机号','注册状态','线索提交时间'],rows);
+    showToast('导出成功');
+  };
+
+  document.getElementById('export-summary-btn').onclick=()=>{
+    const stats={};
+    leads.forEach(l=>{
+      if(!stats[l.channelCode])stats[l.channelCode]={leads:0,reg:0};
+      stats[l.channelCode].leads++;
+      if(registrations.some(r=>r.phone===l.customerPhone))stats[l.channelCode].reg++;
+    });
+    const rows=Object.entries(stats).sort((a,b)=>b[1].leads-a[1].leads).map(([code,s])=>{
+      const c=channels[code];
+      const rate=s.leads>0?Math.round(s.reg/s.leads*100)+'%':'0%';
+      return [code,c?c.name:'-',s.leads,s.reg,rate];
+    });
+    downloadCSV('渠道汇总统表.csv',['邀请码','渠道名称','线索数','已注册数','转化率'],rows);
+    showToast('导出成功');
+  };
+}
+
+function renderAdminSettings(content){
+  const settings=getSettings();
+  let html='<div class="card-title">系统设置</div>';
+  html+=`<div class="card mb-4">
+    <div class="card-title">官方注册链接</div>
+    <p class="text-muted mb-2">客户确认信息后将自动跳转到此链接</p>
+    <div class="input-group">
+      <input type="url" id="setting-register-url" placeholder="https://example.com/register" value="${settings.registerUrl||''}">
+    </div>
+    <button class="btn btn-primary btn-sm" id="save-register-url">保存</button>
+  </div>`;
+
+  html+=`<div class="card mb-4">
+    <div class="card-title">修改管理密码</div>
+    <div class="input-group">
+      <label>当前密码</label>
+      <input type="password" id="setting-old-pin" maxlength="4" placeholder="输入4位密码">
+    </div>
+    <div class="input-group">
+      <label>新密码（4位数字）</label>
+      <input type="password" id="setting-new-pin" maxlength="4" placeholder="输入4位新密码">
+    </div>
+    <button class="btn btn-primary btn-sm" id="save-pin">修改密码</button>
+  </div>`;
+
+  html+=`<div class="card">
+    <div class="card-title">危险操作</div>
+    <p class="text-muted mb-2">清空所有数据，此操作不可恢复</p>
+    <button class="btn btn-danger btn-sm" id="clear-all-btn">清空所有数据</button>
+  </div>`;
+
+  content.innerHTML=html;
+
+  document.getElementById('save-register-url').onclick=()=>{
+    const url=document.getElementById('setting-register-url').value.trim();
+    const s=getSettings();s.registerUrl=url;saveSettings(s);showToast('已保存');
+  };
+
+  document.getElementById('save-pin').onclick=()=>{
+    const old=document.getElementById('setting-old-pin').value.trim();
+    const newPin=document.getElementById('setting-new-pin').value.trim();
+    const s=getSettings();
+    if(old!==s.pin){showToast('当前密码错误');return}
+    if(!/^\d{4}$/.test(newPin)){showToast('请输入4位数字密码');return}
+    s.pin=newPin;saveSettings(s);showToast('密码已修改');
+  };
+
+  document.getElementById('clear-all-btn').onclick=()=>{
+    if(!confirm('⚠️ 此操作将清空所有渠道、客户线索和注册数据，不可恢复。确定继续？'))return;
+    saveData({channels:{},leads:[],registrations:[]});
+    showToast('所有数据已清空');
+    render('admin-settings');
+  };
+}
+
+function route(){
+  const ch=getParam('ch');
+  if(ch){render('landing');return}
+  const admin=getParam('admin');
+  if(admin!=null){renderAdminRoute();return}
+  render('gateway');
+}
+
+function renderAdminRoute(){
+  const tabParam=getParam('tab');
+  const validTabs=['channels','leads','match','dashboard','export','settings'];
+  const tab=validTabs.includes(tabParam)?tabParam:'channels';
+  showPIN(()=>render('admin-'+tab));
+}
+
+route();
+})();
+</script>
+</body>
+</html>
