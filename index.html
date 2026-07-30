@@ -213,8 +213,9 @@ function showPIN(onSuccess){
 }
 
 function getAppUrl(channelCode){
-  const url=new URL(window.location.href);
-  url.search='';url.searchParams.set('ch',channelCode);
+  const base = window.location.origin + window.location.pathname;
+  const url = new URL(base);
+  url.searchParams.set('ch', channelCode);
   return url.toString();
 }
 
@@ -285,9 +286,14 @@ function renderLanding(){
   const data=getData();
   const channel=data.channels[ch];
   if(!channel){renderNotFound(ch);return}
+  const settings=getSettings();
+  const registerUrl=settings.registerUrl||'';
   const app=document.getElementById('app');
   app.innerHTML=`
     <div class="container">
+      <div style="text-align:center;padding:16px 0 8px">
+        <p style="font-size:12px;color:#9ca3af">渠道追踪工具</p>
+      </div>
       <div class="channel-info">
         <div class="name" style="font-size:13px">来自渠道推荐</div>
         <div class="code">${ch}</div>
@@ -305,6 +311,7 @@ function renderLanding(){
         </div>
         <button class="btn btn-success" id="go-register-btn">确认去注册</button>
         <p class="text-muted mt-2" style="text-align:center">信息仅供渠道归属确认，点击即跳转官方注册页</p>
+        ${registerUrl?'<p class="text-muted" style="text-align:center;margin-top:4px;font-size:11px">跳转目标：'+new URL(registerUrl).hostname+'</p>':''}
       </div>
     </div>
   `;
@@ -393,21 +400,21 @@ function renderAdminChannels(content){
   if(channels.length===0){
     html+='<div class="empty-state"><div class="icon">&#x1F4CB;</div><p>暂无渠道</p><p class="text-muted">点击"+ 添加渠道"或让渠道商在首页输入邀请码自动创建</p></div>';
   }else{
-    html+='<table><thead><tr><th>邀请码</th><th>渠道名称</th><th>渠道联系人</th><th>创建时间</th><th>专属链接</th><th>操作</th></tr></thead><tbody>';
+    html+='<div style="overflow-x:auto"><table><thead><tr><th>邀请码</th><th>渠道名称</th><th>创建时间</th><th>专属链接</th><th>操作</th></tr></thead><tbody>';
     channels.forEach(([code,c])=>{
       const link=getAppUrl(code);
-      html+=`<tr>
-        <td><span class="badge badge-blue">${code}</span></td>
-        <td>${c.name||'-'}</td>
-        <td>${c.agentName||'-'}<br><span class="text-muted">${c.agentPhone||''}</span></td>
-        <td><span class="text-muted">${formatDate(c.createdAt)}</span></td>
-        <td><button class="btn btn-outline btn-xs" onclick="copyText('${link.replace(/'/g,"\\'")}')">复制链接</button></td>
-        <td><button class="btn btn-danger btn-xs" onclick="deleteChannel('${code}')">删除</button></td>
-      </tr>`;
+      html+='<tr>'+'<td><span class="badge badge-blue">'+code+'</span></td>'+'<td>'+(c.name||'-')+'</td>'+'<td><span class="text-muted">'+formatDate(c.createdAt)+'</span></td>'+'<td><div style="max-width:200px;word-break:break-all;font-size:11px;color:#374151;margin-bottom:4px">'+link+'</div><button class="btn btn-outline btn-xs copy-link-btn" data-copy-link="'+link.replace(/"/g,'&quot;')+'">复制链接</button></td>'+'<td><button class="btn btn-danger btn-xs del-channel-btn" data-del-code="'+code+'">删除</button></td>'+'</tr>';
     });
-    html+='</tbody></table>';
+    html+='</tbody></table></div>';
   }
   content.innerHTML=html;
+
+  content.querySelectorAll('.copy-link-btn').forEach(btn=>{
+    btn.onclick=()=>copyText(btn.dataset.copyLink);
+  });
+  content.querySelectorAll('.del-channel-btn').forEach(btn=>{
+    btn.onclick=()=>deleteChannel(btn.dataset.delCode);
+  });
 
   document.getElementById('add-channel-btn').onclick=()=>showChannelModal();
   const search=document.getElementById('channel-search');
