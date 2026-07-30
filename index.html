@@ -216,6 +216,8 @@ function getAppUrl(channelCode){
   const base = window.location.origin + window.location.pathname;
   const url = new URL(base);
   url.searchParams.set('ch', channelCode);
+  const s=getSettings();
+  if(s.registerUrl)url.searchParams.set('reg',encodeURIComponent(s.registerUrl));
   return url.toString();
 }
 
@@ -285,9 +287,9 @@ function renderLanding(){
   const ch=getParam('ch').trim().toUpperCase();
   const data=getData();
   const channel=data.channels[ch];
-  if(!channel){renderNotFound(ch);return}
-  const settings=getSettings();
-  const registerUrl=settings.registerUrl||'';
+  const chName=channel?channel.name:ch;
+  const regParam=getParam('reg');
+  const registerUrl=regParam?decodeURIComponent(regParam):(getSettings().registerUrl||'');
   const app=document.getElementById('app');
   app.innerHTML=`
     <div class="container">
@@ -297,7 +299,7 @@ function renderLanding(){
       <div class="channel-info">
         <div class="name" style="font-size:13px">来自渠道推荐</div>
         <div class="code">${ch}</div>
-        <div style="font-size:18px;font-weight:700;margin-top:4px">${channel.name||ch}</div>
+        <div style="font-size:18px;font-weight:700;margin-top:4px">${chName}</div>
       </div>
       <div class="card">
         <div class="card-title">确认信息，前往注册</div>
@@ -342,8 +344,8 @@ function bindLandingEvents(ch){
     const data=getData();
     data.leads.push({id:uid(),channelCode:ch,customerName:name,customerPhone:phone,createdAt:Date.now()});
     saveData(data);
-    const settings=getSettings();
-    const registerUrl=settings.registerUrl||'#'
+    const regParam=getParam('reg');
+    const registerUrl=regParam?decodeURIComponent(regParam):(getSettings().registerUrl||'#')
     document.getElementById('app').innerHTML=`
       <div class="success-overlay">
         <div class="check">&#x2714;</div>
